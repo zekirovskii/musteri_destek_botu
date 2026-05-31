@@ -59,3 +59,18 @@ if upload_file is not None:
             st.session_state.last_uploaded_name = upload_file.name
         
         st.success("PDF başarıyla işlendi.")
+
+if "qa_chain" in st.session_state: # eger pdf islendiyse
+    # kullanıcının sorusunu al
+    user_quesiton = st.text_input("Sorunuzu yazınız")
+
+    if user_quesiton:
+        response = st.session_state.qa_chain.invoke(user_quesiton) # langchain zincirine soruyu gönder 
+        st.session_state.chat_history.append(("👤",user_quesiton)) # kullanıcı mesajını geçmişe ekleme
+        st.session_state.chat_history.append(("🤖",response["answer"])) # model yanıtını history ekleme
+
+    if st.session_state.chat_history:
+        st.subheader("Sohbet geçmişi")
+        for sender, msg in st.session_state.chat_history:
+            st.markdown(f"**{sender}**: {msg}")
+            
