@@ -28,3 +28,50 @@ Plan:
 pip install langchain langchain-community sentence-transformers faiss-cpu pypdf ollama streamlit
 
 """
+import os
+# Modern yapı
+from langchain_classic.chains import ConversationalRetrievalChain
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
+from langchain_classic.memory import ConversationBufferMemory
+
+# embedding modelini baslat
+embedding = HuggingFaceEmbeddings(
+    model_name = "sentence-transformers/LaBSE"
+)
+
+# daha önceden olusturulmus vektor db yükle
+vectordb = FAISS.load_local(
+    "faq_vectorstore",
+    embedding,
+    allow_dangerous_deserialization = True
+)
+
+# konusma gecmisi için memory olustur
+memory = ConversationBufferMemory(
+    memory_key = "chat_history",
+    return_messages = True
+)
+
+# llm tanımla
+llm = ChatOllama( 
+    model = "gemma3:1b",
+    temperature = 0.2
+)
+
+qa_chain = ConversationalRetrievalChain.from_llm(
+    llm = llm,
+    retriever = vectordb.as_retriever(search_kwargs = {"k":3}),
+    memory = memory,
+    verbose = True
+)
+
+# test
+print( "Müşteri Destek Botuna Hoş Geldiniz")
+while True:
+    user_input = input("Siz: ")
+    if user_input.lower() == "çık":
+        break
+    response = qa_chain.run(user_input)
+    print(f"Müşteri Destek Botu: {response}")
